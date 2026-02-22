@@ -128,7 +128,7 @@ all_categories = test_data
 #                 sub_child_title = sub_child.get('title')
 #                 entries = sub_child.get('entries')
 #                 print(f"    {sub_child_title}") if sub_child_title else None
-
+result = []
 
 def extract_tree_info(node, depth=0):
 
@@ -136,7 +136,6 @@ def extract_tree_info(node, depth=0):
     title = node.get('title')
     entries = node.get('entries')
     children = node.get('children', [])
-    category_url = node.get('link').get('linkName') if node.get('link') else None
     category_details = {
         'title':'title',
         'url': 'url'
@@ -146,31 +145,35 @@ def extract_tree_info(node, depth=0):
     if title:
         category_details['title'] = title
         # print(f"{indent}{title}")
+    category_details['title'] = ''
+
 
     # Print entries
     if entries:
         for entry in entries:
+            title = entry.get('link').get('linkName')
+            category_details['title'] = title
             url = entry.get('link').get('url')
             if url:
-                category_details['url'] = str(url)
+                category_details['url'] = url
+                result.append(category_details)
 
-    else:
-        category_details['url'] = str(category_url)
 
 
     # Recursively process children
     for child in children:
         extract_tree_info(child, depth + 1)
-    return category_details
 
-result = []
+
+
+
 for category in all_categories:
     root_node = category.get('navigationNode')
     if root_node:
-        details = extract_tree_info(root_node)
-        result.append(details)
+        extract_tree_info(root_node)
 
-print(result)
+# print(len(result))
+# [print(i['title']+'-'+ i['url']) for i in result]
 
 
 

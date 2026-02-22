@@ -316,7 +316,8 @@ test_data =[
                                                 'external': 'false',
                                                 'categoryCode': 'P11070101',
                                                 'category': 'P11070101',
-                                                'url': '/TV--Video-i-Gaming/Audio-sistemi/c/P11070101', 'linkName': 'Аудио системи', 'target': 'false'
+                                                'url': '/TV--Video-i-Gaming/Audio-sistemi/c/P11070101',
+                                                'linkName': 'Аудио системи', 'target': 'false'
                                             }
                                     }
                                 ],
