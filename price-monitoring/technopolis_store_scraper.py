@@ -1,7 +1,7 @@
 from playwright.sync_api import sync_playwright
 import pandas as pd
-from core import all_categories_names_and_links, get_all_categories
-
+from core import all_categories_names_and_links, get_all_categories, export_categories_to_csv, extract_product_data
+from pathlib import Path
 
 def run():
     with sync_playwright() as p:
@@ -21,8 +21,6 @@ def run():
 
             # Accepting cookies
             selector = "#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll"
-            # try:
-            #     page.wait_for_selector()
             try:
                 page.wait_for_selector(selector, timeout=5000)
                 page.click(selector)
@@ -46,36 +44,48 @@ def run():
             except:
                 print("Ad did not show up.")
 
-            # Getting categories
-            try:
-                with page.expect_response(
-                        lambda r: "components/topnavigation/topNavigationBarMenu" in r.url and r.status == 200
-                ) as resp_info:
-                    page.reload()
-                    response = resp_info.value
-                    data = response.json()
-                    all_categories = data["components"]["component"]
+            # Extracting categories
+            categories_csv_path = Path("../database/categories.csv")
+            if not categories_csv_path.exists():
+                print("Extracting categories...")
+                try:
+                    with page.expect_response(
+                            lambda r: "components/topnavigation/topNavigationBarMenu" in r.url and r.status == 200
+                    ) as resp_info:
+                        page.reload()
+                        response = resp_info.value
+                        data = response.json()
+                        all_categories = data["components"]["component"]
+                        # getting categories
+                        get_all_categories(all_categories)
+                        # exporting categories into csv
+                        export_categories_to_csv(all_categories_names_and_links)
 
-                    get_all_categories(all_categories)
+                        # [print(i.get("title")+"-"+i.get("url")) for i in all_categories_names_and_links]
+                except:
+                    print("Cannot find categories")
+            else:
+                print("Categories are already extracted.")
 
-                    # [print(i.get("title")+"-"+i.get("url")) for i in all_categories_names_and_links]
-            except:
-                print("Cannot find categories")
 
-            # Extracting products
+            # Extracting products for each category
             try:
                 # Function for extracting products from current page
                 def get_page_number_return_products(page_number):
                     with page.expect_response(lambda r: "products/search" in r.url and r.status == 200) as res_info:
-                    #todo if not button.....
-                        page.get_by_role("button", name="90").click()
+                        page_size_90_button = page.get_by_role("button", name="90")
+                        if page_size_90_button.is_visible():
+                            page_size_90_button.click()
                         if not page_number == 1:
                             page.get_by_role("link", name=f"{page_number}", exact=True).click()
                         curr_response = res_info.value
                         curr_data = curr_response.json()
                         return curr_data
+
+                df = pd.read_csv("../database/categories.csv")
+                categories_list_from_csv = df.to_dict(orient="records")
                 sum_products = 0
-                for category in all_categories_names_and_links:
+                for category in categories_list_from_csv:
                     title = category.get("title")
                     category_link = category.get("link")
                     try:
@@ -84,16 +94,19 @@ def run():
                         # page.get_by_role("button", name="90").click()
                         current_data = get_page_number_return_products(1)
                         pagination =current_data["pagination"]
-                        number_of_pages = pagination["totalPages"]
+                        number_of_pages = int(pagination["totalPages"])
                         number_of_products = pagination["totalResults"]
-                        print(f'Found {number_of_products} in {title}.')
+                        print(f'Found {number_of_products} products in {title}.')
                         sum_products += number_of_products
                     except Exception as e:
                         page.screenshot(path=f"error_{title.replace(' ', '_')}.png", full_page=True)
                         print(f"Cannot process category '{title}': {e}")
-                print(f'Found {sum_products} products.')
-                    # for page in range(1,number_of_pages+1):
-                    #     products = get_page_number_return_products(page)
+                # print(f'Found {sum_products} products.')
+                    for curr_page in range(1,number_of_pages+1):
+                        products = get_page_number_return_products(curr_page)
+                        for product in products:
+                            current_product = extract_product_data(product)
+
 
             except ValueError as e:
                 page.screenshot(path=".", type='png')
