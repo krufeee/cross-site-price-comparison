@@ -134,3 +134,4 @@ exports/
 /price-monitoring/core.py
 /identifier.sqlite
 /manage.py
+/database/
