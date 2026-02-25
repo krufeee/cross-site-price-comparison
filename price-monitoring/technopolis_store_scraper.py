@@ -1,17 +1,16 @@
 from playwright.sync_api import sync_playwright
 import pandas as pd
-from core import all_categories_names_and_links, get_all_categories, export_categories_to_csv, extract_product_data
+from functions_lobby import all_categories_names_and_links, get_all_categories, export_categories_to_csv, extract_product_data
 from pathlib import Path
 
 def run():
     with sync_playwright() as p:
+
         # Starting Chromium browser
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
-
         print("Opening website...")
-
         try:
 
             # Loading DOM
@@ -35,17 +34,18 @@ def run():
             button = ".modal-close"
             try:
                 page.wait_for_selector(selector, timeout=2000)
-                print("Ad popup.")
                 page.wait_for_timeout(2000)
                 page.wait_for_selector(button, timeout=2000)
                 page.click(button)
                 print('Ad closed.')
-
             except:
                 print("Ad did not show up.")
 
             # Extracting categories
+
+            # Checking if csv is created
             categories_csv_path = Path("../database/categories.csv")
+
             if not categories_csv_path.exists():
                 print("Extracting categories...")
                 try:
@@ -60,7 +60,6 @@ def run():
                         get_all_categories(all_categories)
                         # exporting categories into csv
                         export_categories_to_csv(all_categories_names_and_links)
-
                         # [print(i.get("title")+"-"+i.get("url")) for i in all_categories_names_and_links]
                 except:
                     print("Cannot find categories")
@@ -81,17 +80,18 @@ def run():
                         curr_response = res_info.value
                         curr_data = curr_response.json()
                         return curr_data
-
+                # Reading categories from csv
                 df = pd.read_csv("../database/categories.csv")
+                # Converting to dict
                 categories_list_from_csv = df.to_dict(orient="records")
                 sum_products = 0
+                # Cycle through categories
                 for category in categories_list_from_csv:
                     title = category.get("title")
                     category_link = category.get("link")
                     try:
                         page.goto(category_link)
                         page.wait_for_load_state("networkidle", timeout=30000)
-                        # page.get_by_role("button", name="90").click()
                         current_data = get_page_number_return_products(1)
                         pagination =current_data["pagination"]
                         number_of_pages = int(pagination["totalPages"])
@@ -101,11 +101,12 @@ def run():
                     except Exception as e:
                         page.screenshot(path=f"error_{title.replace(' ', '_')}.png", full_page=True)
                         print(f"Cannot process category '{title}': {e}")
-                # print(f'Found {sum_products} products.')
+                    # Cycle through pages in current category
                     for curr_page in range(1,number_of_pages+1):
                         products = get_page_number_return_products(curr_page)
                         for product in products:
                             current_product = extract_product_data(product)
+
 
 
             except ValueError as e:

@@ -131,7 +131,7 @@ exports/
 # Jupyter Notebook
 .ipynb_checkpoints
 /utils/
-/price-monitoring/core.py
+/price-monitoring/functions_lobby.py
 /identifier.sqlite
 /manage.py
 /database/
