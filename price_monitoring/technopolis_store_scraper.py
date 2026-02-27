@@ -80,6 +80,8 @@ def technopolis_store_scraper():
                     time.sleep(0.2)
                     title = category.get("title")
                     code = category.get("code")
+                    if code == 'Promotions':
+                        continue
                     data = get_products_from_api(page, code,1,90)
                     if not data:
                         continue
