@@ -3,7 +3,7 @@ import time
 from playwright.sync_api import sync_playwright
 import pandas as pd
 from database.sqlite_db import get_connection, add_multiple_products
-from utils.functions_lobby import all_categories_names_and_links, get_all_categories, export_categories_to_csv, \
+from site_scrapers.technopolis.functions_lobby import all_categories_names_and_links, get_all_categories, export_categories_to_csv, \
     get_products_from_api,counter
 
 
@@ -69,8 +69,7 @@ def technopolis_store_scraper():
                 # Extracting products for each category
                 try:
                     # Reading categories from csv
-                    df = pd.read_csv("./database/categories.csv")
-
+                    df = pd.read_csv("./database/categories_technopolis.csv")
                     # Converting to dict
                     categories_list_from_csv = df.to_dict(orient="records")
 
@@ -115,7 +114,7 @@ def technopolis_store_scraper():
                     conn.commit()
 
                 except ValueError as e:
-                    page.screenshot(path=".", type='png')
+                    page.screenshot(path="../../price_monitoring", type='png')
                     print(f"Cannot find products {e}")
 
                 print('Finished.')
