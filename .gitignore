@@ -131,7 +131,7 @@ exports/
 # Jupyter Notebook
 .ipynb_checkpoints
 /utils/
-/site_scrapers/technopolis/functions_lobby.py
+/utils/functions_lobby.py
 /identifier.sqlite
 /manage.py
 /database/
