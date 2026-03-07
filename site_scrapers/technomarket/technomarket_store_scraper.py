@@ -1,5 +1,6 @@
-import re
 
+import re
+import pandas as pd
 from playwright.sync_api import sync_playwright
 
 def technomarket_store_scraper():
@@ -10,7 +11,7 @@ def technomarket_store_scraper():
             context = browser.new_context()
             page = context.new_page()
             # Loading DOM
-            base_url = "https://www.technomarket.bg/"
+            base_url = "https://www.technomarket.bg"
             page.goto(base_url)
             try:
                 print('Accepting cookies...')
@@ -26,43 +27,49 @@ def technomarket_store_scraper():
                 print('Extracting categories...')
                 page.locator('.main-navigation > button:nth-child(1)').click()
                 categories_menu = page.locator('a.menu-link')
-                all_categories = categories_menu.all()
+                category_menu_entries = categories_menu.all()
                 categories = []
-                for c_link in all_categories:
-                    category_name = c_link.inner_text()
-                    # print(category_name)
-                    categories_details = {
-                        'name': 'name',
-                        'link': 'link'
-                    }
-                    sub_category_container = page.locator('.menu-W002')
-                    sub_category_container.is_visible()
-                    c_link.click()
-                    subcategories = page.locator('.menu-popup-container > div > h4 > a')
-                    all_subcategories = subcategories.all()
-                    for s_cat in all_subcategories:
-                        main_name = s_cat.inner_text()
-                        href = s_cat.get_attribute("href")
-                        s_url = base_url + href
-                        sub_subcategories = page.locator('.menu-popup-container > div:nth-child(1) > div:nth-child(2) > div > a')
-                        # if sub_subcategories.count() == 0:
-                        #     categories_details['link'] = s_url
-                        #     categories_details['name'] = main_name
-                        #     categories.append(categories_details)
-                        #     continue
-                        # all_sub_subcategories = sub_subcategories.all()
-                        # for s_s_cat in all_sub_subcategories:
-                        #     s_s_cat_href = s_s_cat.get_attribute("href")
-                        #     s_s_cat_text = s_s_cat.inner_text()
-                        #     s_s_cat_url = s_url + s_s_cat_href
-                        #     s_s_cat_name = main_name + ' ' + s_s_cat_text
-                        #     categories_details['link'] = s_s_cat_url
-                        #     categories_details['name'] = s_s_cat_name
-                        #     categories.append(categories_details)
+                for menu_entry in category_menu_entries:
+                    menu_entry.click()
+                    category_container_entries = page.locator('.menu-popup-container > div ')
+                    all_category_container_entries = category_container_entries.all()
+                    for category_entry in all_category_container_entries:
+                        category_locator = category_entry.locator('h4 > a')
+                        sub_category_locator = category_entry.locator('div > div > a')
+                        if sub_category_locator.count() > 0:
+                            all_subcategory_entries = sub_category_locator.all()
+                            for sub_category_entry in all_subcategory_entries:
+                                sub_category_name = sub_category_entry.inner_text()
+                                sub_category_link = sub_category_entry.get_attribute('href')
+                                categories.append({'name' : sub_category_name, 'link' : sub_category_link})
+                        else:
+                            category = category_locator.first
+                            category_name = category.inner_text()
+                            category_link = category.get_attribute('href')
+                            categories.append({'name' : category_name, 'link' : category_link})
 
 
+                df = pd.DataFrame(categories)
+                df = df.drop_duplicates(subset=["link"])
+                df.to_csv(f"../../database/categories_technomarket.csv", index=False, encoding="utf-8-sig")
 
+                print('Categories extracted')
 
+                df = pd.read_csv('../../data/categories/categories_technomarket.csv')
+                categories_dict_from_csv = df.to_dict(orient="records")
+
+                for category in categories_dict_from_csv:
+                    current_link = base_url + category['link']
+                    current_name = category['name']
+                    print(f'Extracting category - {current_name} ...')
+                    page.goto(current_link)
+                    pagination = page.locator('.pages > a')
+                    if pagination.count() > 0:
+                        next_page_button = pagination.last
+                        next_button = next_page_button.get_attribute('.class')
+                        print(next_button)
+                    else:
+                        print('Only one page here')
 
 
 
@@ -73,19 +80,11 @@ def technomarket_store_scraper():
             except Exception as e:
                 print(e)
 
-
-            # ---------------------
             context.close()
             browser.close()
 
     except Exception as e:
         print(e)
-
-
-
-
-        # browser.close()
-
 
 
 technomarket_store_scraper()

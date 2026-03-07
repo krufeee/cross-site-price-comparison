@@ -1,4 +1,4 @@
-from database.sqlite_db import init_db
+from database.init_db import init_db
 from site_scrapers.technopolis.technopolis_store_scraper import technopolis_store_scraper
 
 if __name__ == "__main__":

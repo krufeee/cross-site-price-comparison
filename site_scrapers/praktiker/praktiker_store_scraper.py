@@ -1,13 +1,13 @@
 import time
+
 from playwright.sync_api import sync_playwright
 import pandas as pd
-from database.connection import get_connection
-from database.queries import add_multiple_products
-from site_scrapers.technopolis.parser import get_products_from_api, all_categories_names_and_links, get_all_categories
-from utils.functions_lobby import export_categories_to_csv, counter
+from database.sqlite_db import get_connection, add_multiple_products, init_db
+from utils.functions_lobby import all_categories_names_and_links, get_all_categories, export_categories_to_csv, \
+    get_products_from_api,counter
 
 
-def technopolis_store_scraper():
+def praktiker_store_scraper():
     with get_connection() as conn:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
@@ -22,7 +22,7 @@ def technopolis_store_scraper():
             print('Opening browser...')
             try:
                 # Loading DOM
-                page.goto("https://www.technopolis.bg/bg/",
+                page.goto("https://www.praktiker.bg/bg/",
                           wait_until="domcontentloaded",
                           timeout=60000)
 
@@ -61,7 +61,7 @@ def technopolis_store_scraper():
                         # getting categories
                         get_all_categories(all_categories)
                         # exporting categories into csv
-                        export_categories_to_csv(all_categories_names_and_links,'categories_technopolis')
+                        # export_categories_to_csv(all_categories_names_and_links,'categories_praktiker.csv')
 
                 except Exception as e:
                     print(f"Error: {e}.")
@@ -69,12 +69,12 @@ def technopolis_store_scraper():
                 # Extracting products for each category
                 try:
                     # Reading categories from csv
-                    df = pd.read_csv("./data/categories/categories_technopolis.csv")
-                    # Converting to dict
-                    categories_list_from_csv = df.to_dict(orient="records")
+                    # df = pd.read_csv("../../database/categories_praktiker.csv")
+                    # # Converting to dict
+                    # categories_list_from_csv = df.to_dict(orient="records")
 
                         # Cycle through categories
-                    for category in categories_list_from_csv:
+                    for category in all_categories_names_and_links:
                         time.sleep(0.2)
                         title = category.get("title")
                         code = category.get("code")
@@ -93,18 +93,18 @@ def technopolis_store_scraper():
 
                         counter(number_of_products,'')
 
-                        for curr_page in range(number_of_pages):
-                            data = ''
-                            for attempt in range(3):
-                                data = get_products_from_api(page, code, curr_page, 90)
-                                if data:
-                                    break
-                                time.sleep(1)
-                            products = data.get("products")
-                            if not products:
-                                continue
-                            add_multiple_products(conn, products, title)
-                            time.sleep(0.2)
+                        # for curr_page in range(number_of_pages):
+                        #     data = ''
+                        #     for attempt in range(3):
+                        #         data = get_products_from_api(page, code, curr_page, 90)
+                        #         if data:
+                        #             break
+                        #         time.sleep(1)
+                        #     products = data.get("products")
+                        #     if not products:
+                        #         continue
+                        #     add_multiple_products(conn, products, title)
+                        #     time.sleep(0.2)
 
                         print(f'Extracting {title} finished successfully.')
 
@@ -126,3 +126,5 @@ def technopolis_store_scraper():
             page.wait_for_timeout(1000)
             browser.close()
 
+init_db('prakiker')
+praktiker_store_scraper()
