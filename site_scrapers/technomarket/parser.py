@@ -91,12 +91,45 @@ product = (
                 '</div>'
             '</div>'
 )
-
+# Function that receives products locator on current page and returns dict with product details
 def scrape_products(products):
+    products_on_current_page = []
     number_of_products = products.count()
-    return number_of_products
+    for i in range(number_of_products):
+        current_product = products.nth(i)
+        product_image_locator = current_product.locator('a > picture > img')
+        product_image_link = product_image_locator.first.get_attribute('src')
+        product_details_locator = current_product.locator('.title').first
+        product_category = product_details_locator.get_attribute('data-category')
+        product_link = product_details_locator.get_attribute('href')
+        product_type_locator = product_details_locator.locator('.type').first
+        product_type = product_type_locator.inner_text()
+        product_brand_locator = product_details_locator.locator('.brand').first
+        product_brand = product_brand_locator.inner_text()
+        product_model_locator = product_details_locator.locator('.name').first
+        product_model = product_model_locator.inner_text()
+        product_code_locator = current_product.locator('.code').last
+        product_code = product_code_locator.inner_text().split()[-1]
+        product_price_locator = current_product.locator('.euro_price').first
+        product_price_raw = product_price_locator.inner_text().split()
+        product_price = float(product_price_raw[0])
+        product_name = product_brand + product_model
 
-    # for i in range(number_of_products):
-    #     product = products.nth(i)
-    #     product_code = product.get_atribute('data-product')
-    #     pass
+        product_details = {
+            'name': product_name,
+            'price': product_price,
+            'type': product_type,
+            'code': product_code,
+            'ean': 'ean',
+            'brand': product_brand,
+            'model': product_model,
+            'category': product_category,
+            'url': product_link,
+            'available': True,
+            'store' : 'technomarket',
+            'image': product_image_link,
+        }
+        products_on_current_page.append(product_details)
+        print(product_details)
+        break
+    return products_on_current_page

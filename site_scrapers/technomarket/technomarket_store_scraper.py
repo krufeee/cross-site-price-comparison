@@ -79,19 +79,13 @@ def technomarket_store_scraper():
                         if products.count() == 0:
                             break
 
-                        products_count += scrape_products(products)
+                        scrape_products(products)
+                        products_count += products.count()
 
                         page_num += 1
-                    # pagination = page.locator('.pages > a')
-                    # if pagination.count() > 0:
-                    #     next_page_button = pagination.last
-                    #     next_button = next_page_button.get_attribute('.class')
-                    #     print(next_button)
-                    # else:
-                    #     print('Only one page here')
-
 
                 print(products_count)
+
 
 
 
