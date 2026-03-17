@@ -61,6 +61,11 @@ def extract_model(url):
 def extract_product_data(current_product):
     brand_name = ''
     model = ''
+    image_url = ''
+    image = current_product.get('images', [])
+    if image:
+        image_url = image[0].get('url', "")
+        brand_name = current_product.get('brand')
     raw_name = current_product.get('name')
     current_url = current_product.get("url", "")
     extracted_data = extract_model(current_url)
@@ -85,6 +90,7 @@ def extract_product_data(current_product):
         "price": price,
         "purchasable": purchasable,
         "link": link,
+        "image_url": image_url,
     }
 
 # Function for extracting products from API
