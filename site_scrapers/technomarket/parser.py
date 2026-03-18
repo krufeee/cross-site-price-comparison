@@ -11,10 +11,10 @@ def scrape_products(products, conn):
     for i in range(number_of_products):
         current_product = products.nth(i)
         product_image_locator = current_product.locator('a > picture > img')
-        product_image_link = product_image_locator.first.get_attribute('src', '')
+        product_image_link = product_image_locator.first.get_attribute('src')
         product_details_locator = current_product.locator('.title').first
-        product_category = product_details_locator.get_attribute('data-category', '')
-        product_link = product_details_locator.get_attribute('href', '')
+        product_category = product_details_locator.get_attribute('data-category')
+        product_link = product_details_locator.get_attribute('href')
         product_type_locator = product_details_locator.locator('.type').first
         product_type = product_type_locator.inner_text()
         product_type_plus_category = product_type+"/"+product_category
@@ -24,17 +24,18 @@ def scrape_products(products, conn):
         product_model = product_model_locator.inner_text()
         product_code_locator = current_product.locator('.code').last
         product_code = product_code_locator.inner_text().split()[-1]
-        product_price_locator = current_product.locator('.euro_price').first
-        product_price_raw = product_price_locator.inner_text().split()
-        product_price = float(product_price_raw[0])
+        product_price_locator = current_product.locator('.price')
+        product_price_exact_locator = product_price_locator.locator('.euro_price')
+        product_price_raw = product_price_exact_locator.inner_text().split()
+        product_price = float((product_price_raw[0].replace(',', '')))
         product_name = product_brand + product_model
         store = 'technomarket'
-        product_ean = 'ean'
+        product_ean = ''
         last_entry_id = ''
         is_product_purchasable = False
         is_purchasable = current_product.locator('.button-text')
 
-        if is_purchasable.is_visible():
+        if is_purchasable.count() > 0:
                 is_product_purchasable = True
 
 
@@ -51,4 +52,49 @@ def scrape_products(products, conn):
             add_price(cursor, last_entry_id, product_price)
         except Exception as e:
             print(e)
-    return products_on_current_page
+
+
+def get_categories(page, base_url: str) -> list[dict]:
+    """Extract all categories and subcategories from the navigation menu."""
+    page.locator('.main-navigation > button:nth-child(1)').click()
+
+    menu_links = page.locator('a.menu-link').all()
+    categories = []
+
+    for menu_entry in menu_links:
+        menu_entry.click()
+        container_entries = page.locator('.menu-popup-container > div').all()
+
+        for entry in container_entries:
+            categories.extend(_parse_category_entry(entry, base_url))
+
+    return categories
+
+
+def _parse_category_entry(entry, base_url: str) -> list[dict]:
+    """Parse a single category entry, returning subcategories if present."""
+    sub_category_links = entry.locator('div > div > a')
+
+    if sub_category_links.count() > 0:
+        return _parse_subcategories(sub_category_links.all(), base_url)
+
+    return _parse_main_category(entry.locator('h4 > a').first, base_url)
+
+
+def _parse_subcategories(sub_entries, base_url: str) -> list[dict]:
+    return [
+        {
+            'name': entry.inner_text(),
+            'link': base_url + entry.get_attribute('href')
+        }
+        for entry in sub_entries
+    ]
+
+
+def _parse_main_category(category, base_url: str) -> list[dict]:
+    return [
+        {
+            'name': category.inner_text(),
+            'link': f"{base_url}/produkti{category.get_attribute('href')}"
+        }
+    ]
