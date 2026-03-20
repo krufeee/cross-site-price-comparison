@@ -1,4 +1,6 @@
-
+import logging
+from datetime import datetime
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, Error as PlaywrightError
 import re
 import time
 
@@ -10,6 +12,15 @@ from site_scrapers.technomarket.parser import scrape_products, get_categories
 
 
 def technomarket_store_scraper():
+    logging.basicConfig(
+        filename=f"scraper_errors_{datetime.now().strftime('%Y%m%d')}.log",
+        level=logging.ERROR,
+        format="%(asctime)s | %(levelname)s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        encoding="utf-8",
+    )
+
+    logger = logging.getLogger(__name__)
     with get_connection() as conn:
         try:
             with sync_playwright() as p:
@@ -59,16 +70,25 @@ def technomarket_store_scraper():
                             if products.count() == 0:
                                 break
 
-                            scrape_products(products, conn)
+                            scrape_products(products, conn, logger)
                             products_count += products.count()
 
-                            time.sleep(1)
                             page_num += 1
 
                     print(f'Total products scraped: {products_count}')
 
+
+                except PlaywrightTimeoutError:
+
+                    logger.error("Timeout на: %s", url)
+
+                except PlaywrightError as e:
+
+                    logger.exception("Playwright грешка на: %s", url)
+
                 except Exception as e:
-                    print(e)
+
+                    logger.exception("Неочаквана грешка на: %s", url)
 
                 context.close()
                 browser.close()
