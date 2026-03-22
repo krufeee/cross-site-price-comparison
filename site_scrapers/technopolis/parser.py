@@ -41,38 +41,37 @@ def get_all_categories(data):
 
 # Function that receives url and return brand and model for product
 def extract_model(url):
-    # Pattern за различни варианти
-    pattern = r"Televizor-([A-Za-z0-9]+)-([A-Za-z0-9]+)"
-    match = re.search(pattern, url)
-    if match:
-        return {
-            'brand': match.group(1),
-            'model': match.group(2),
-            'success': True
-        }
-    else:
-        return {
-            'brand': None,
-            'model': None,
-            'success': False
-        }
+    slug = url.split('/')[-3]  # 'Televizor-TELEFUNKEN-24HA6001-LED'
+
+    # Намираме всички части с главни букви
+    parts = slug.split('-')
+    try:
+        upper_parts = [p for p in parts if p.isupper() or (p[0].isupper() and re.search(r'\d', p))]
+
+    except Exception as e:
+        return None, None
+
+
+    if not upper_parts:
+        return None, None
+
+    brand = upper_parts[0]
+    model = '-'.join(upper_parts[1:]) if len(upper_parts) > 1 else None
+
+    return brand, model
 
 # Function for extracting product details for current product
 def extract_product_data(current_product):
-    brand_name = ''
-    model = ''
+    brand_name = None
+    model = None
     image_url = ''
     image = current_product.get('images', [])
     if image:
         image_url = image[0].get('url', "")
-        brand_name = current_product.get('brand')
+
     raw_name = current_product.get('name')
     current_url = current_product.get("url", "")
-    extracted_data = extract_model(current_url)
-    extracted_state = extracted_data.get('success')
-    if extracted_state:
-        brand_name = extracted_data.get('brand')
-        model = extracted_data.get('model')
+    brand_name, model = extract_model(current_url)
     ean = current_product.get("ean", "")
     purchasable = current_product.get('purchasable')
     price = float(current_product.get('price', {}).get("value"))

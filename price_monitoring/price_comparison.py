@@ -1,0 +1,4 @@
+
+
+searched_products = ['HW-Q700D', 'MQ5235WH', 'UE-55U8072F', 'APPLE IPHONE 17 PRO MAX 256GB DEEP BLUE',
+                     'XIAOMI REDMI 15 8/256GB DS BLACK']

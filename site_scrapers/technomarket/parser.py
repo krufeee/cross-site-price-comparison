@@ -25,9 +25,6 @@ def scrape_products(products, conn, logger):
             product_details_locator = current_product.locator('.title').first
             product_category = product_details_locator.get_attribute('data-category')
             product_link = product_details_locator.get_attribute('href')
-            product_type_locator = product_details_locator.locator('.type').first
-            product_type = product_type_locator.inner_text()
-            product_type_plus_category = product_type+"/"+product_category
             product_brand_locator = product_details_locator.locator('.brand').first
             product_brand = product_brand_locator.inner_text()
             product_model_locator = product_details_locator.locator('.name').first
@@ -49,7 +46,8 @@ def scrape_products(products, conn, logger):
                     is_product_purchasable = True
 
         except Exception as e:
-            logger.exception("Грешка при продукт %d на страницата", i)
+            logger.exception(f"Грешка при продукт %d на страницата "
+                             f"категория -{product_category} - {product_link}", i  )
             continue
 
         if not all([product_name, product_code, product_price]):
@@ -59,7 +57,7 @@ def scrape_products(products, conn, logger):
 
         try:
             last_entry_id = add_product(conn, product_name, product_code, product_ean, product_brand, product_model,
-                                        product_type_plus_category, product_link,
+                                        product_category, product_link,
                                         is_product_purchasable, store, product_image_link)
         except sqlite3.IntegrityError as e:
             logger.error(e)
