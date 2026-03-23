@@ -1,0 +1,11 @@
+name,
+price,
+product_code,
+ean,
+brand,
+model,
+category,
+url,
+available,
+store,
+img
