@@ -1,25 +1,17 @@
-from rapidfuzz import fuzz
-
 
 from config import searched_products, THRESHOLD
 from database.queries import get_last_price_for_products
-from utils.normalize import normalize
+from utils.matching import get_score
 
 results = {}
 all_products = get_last_price_for_products()
 
 for search_term in searched_products:
-    norm_search = normalize(search_term)
     matches = []
 
     for product in all_products:
-        # Сравняваме по model и name
-        norm_model = normalize(product['model'])
-        norm_name = normalize(product['name'])
 
-        score_model = fuzz.partial_ratio(norm_search, norm_model)
-        score_name = fuzz.partial_ratio(norm_search, norm_name)
-        score = max(score_model, score_name)
+        score = get_score(search_term, product)
 
         if score >= THRESHOLD:
             matches.append({
